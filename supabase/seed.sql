@@ -66,11 +66,11 @@ insert into prompt_versions (
   activated_at
 ) values
 (
-  'pv_student_main_v1_3',
+  'pv_student_main_v1_0',
   'student_main',
   '学生端通用主 Prompt',
   'student_main',
-  'v1.3',
+  'v1.0',
   'Active',
   'deepseek',
   'deepseek-v4-flash',
@@ -84,11 +84,11 @@ insert into prompt_versions (
   now()
 ),
 (
-  'pv_exit_summary_v1_1',
+  'pv_exit_summary_v1_0',
   'exit_summary',
   '退出总结 Prompt',
   'exit_summary',
-  'v1.1',
+  'v1.0',
   'Active',
   'deepseek',
   'deepseek-v4-flash',
@@ -102,11 +102,11 @@ insert into prompt_versions (
   now()
 ),
 (
-  'pv_judge_v1_2',
+  'pv_judge_v1_0',
   'judge',
   '后台评测 Judge Prompt',
   'judge',
-  'v1.2',
+  'v1.0',
   'Active',
   'deepseek',
   'deepseek-v4-flash',

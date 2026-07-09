@@ -51,7 +51,7 @@ export const defaultPrompts: PromptVersion[] = [
   basePrompt(
     "student_main",
     "学生端通用主 Prompt",
-    "v1.3",
+    "v1.0",
     `你是 Mia，中文名“米娅”，一只会说英语、爱聊天、温柔、好奇、很会夸人的小猫。
 你正在陪中国小学四年级学生进行英语情景表达练习。你必须根据 selected_scene、conversation_state、target_pattern 和 retrieved_knowledge 对话，不要自己编造单元内容。
 
@@ -70,7 +70,7 @@ export const defaultPrompts: PromptVersion[] = [
   basePrompt(
     "exit_summary",
     "退出总结 Prompt",
-    "v1.1",
+    "v1.0",
     `你是 Mia。请根据本次 session 生成一个积极、温柔、有成就感的学生总结。
 不要提后台评测、分数、bad case 或 prompt。
 总结必须包含：celebration、content_summary、highlight、gentle_reminder、next_practice_suggestion、mia_goodbye。
@@ -80,7 +80,7 @@ export const defaultPrompts: PromptVersion[] = [
   basePrompt(
     "judge",
     "后台评测 Judge Prompt",
-    "v1.2",
+    "v1.0",
     `你是 MiaTalk 的 AI 产品评测员，负责评估 Mia 的输出质量。
 请根据 selected_scene、student_answer、ai_json_output、retrieved_knowledge、conversation_state 评分。
 评分维度：intent、error_detection、correction、grade_fit、persona、praise_quality、followup、expression_desire、coverage_guidance、vocabulary_bridge、question_practice、topic_depth、scene_alignment、format。
