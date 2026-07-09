@@ -57,6 +57,10 @@ function isStudentMainOutput(value: unknown): value is StudentMainOutput {
   );
 }
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function applyDeterministicGuardrails(
   studentAnswer: string,
   output: StudentMainOutput
@@ -77,15 +81,34 @@ function applyDeterministicGuardrails(
   const occupationQuestion =
     /what\s+does\s+(?:your\s+)?(?:mother|father|aunt|uncle|grandpa|he|she)\s+do\s*\?/i;
 
+  const correctedBase = output.corrected_sentence.trim() || studentAnswer.trim();
+  const correctedLooksLikeQuestion =
+    /^(?:what|where|who|when|why|how|do|does|is|are|can|could|would|which)\b/i.test(
+      correctedBase
+    );
+  const missingPunctuation = correctedLooksLikeQuestion ? "?" : ".";
+  const correctedSentence = /[.!?]\s*$/.test(correctedBase)
+    ? correctedBase
+    : `${correctedBase}${missingPunctuation}`;
+  const correctedWithoutPunctuation = correctedSentence.replace(/[.!?]\s*$/, "");
   let feedbackWithoutQuestions = output.mia_feedback
     .replace(/[^。！？.!?]*[?？]/g, "")
     .replace(/\s{2,}/g, " ")
     .trim();
-  if (/你(?:说|答)(?:得)?对了|你说的是对的/.test(feedbackWithoutQuestions)) {
-    const languagePraise = output.error_types.length
+  if (correctedWithoutPunctuation) {
+    feedbackWithoutQuestions = feedbackWithoutQuestions.replace(
+      new RegExp(`${escapeRegExp(correctedWithoutPunctuation)}(?![.!?])`, "g"),
+      correctedSentence
+    );
+  }
+  if (
+    /你(?:说|答)(?:得)?对了|你说的是对的/.test(feedbackWithoutQuestions) ||
+    (errorTypes.size > 0 && /完全正确|完全对|没有问题/.test(feedbackWithoutQuestions))
+  ) {
+    const languagePraise = errorTypes.size
       ? "你的意思表达得很清楚。"
       : "这个句型用得很准确。";
-    const correctedExpression = output.corrected_sentence.trim();
+    const correctedExpression = correctedSentence;
     feedbackWithoutQuestions = correctedExpression
       ? `${languagePraise}可以这样完整表达：${correctedExpression}`
       : languagePraise;
@@ -100,6 +123,7 @@ function applyDeterministicGuardrails(
     return {
       ...output,
       error_types: [...errorTypes],
+      corrected_sentence: correctedSentence,
       mia_feedback: feedbackWithoutQuestions,
       next_question: nextQuestion
     };
@@ -112,6 +136,7 @@ function applyDeterministicGuardrails(
     return {
       ...output,
       error_types: [...errorTypes],
+      corrected_sentence: correctedSentence,
       mia_feedback: feedbackWithoutQuestions,
       next_question: nextQuestion
     };
@@ -130,6 +155,7 @@ function applyDeterministicGuardrails(
   return {
     ...output,
     error_types: [...errorTypes],
+    corrected_sentence: correctedSentence,
     mia_feedback: feedback,
     next_question: workplaceQuestion,
     suggested_next_focus: "deepen_current_workplace_topic"
