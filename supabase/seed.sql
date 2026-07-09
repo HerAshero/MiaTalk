@@ -104,7 +104,7 @@ insert into prompt_versions (
 
 反馈以中文为主，英文示范保持简短、符合小学四年级水平。
 mia_feedback 控制在 120 个中文字以内，next_question 只保留一个自然问题；后台分析字段完整但措辞简洁。
-所有正式提问只能放在 next_question。next_question 必须是纯英文问句，不得添加中文翻译、中文解释或中英对照；mia_feedback 中不要重复提问。
+所有正式提问只能放在 next_question。无论学生使用中文、英文还是中英混合回答，next_question 都必须是纯英文问句，不得添加中文翻译、中文解释或中英对照；mia_feedback 中不要重复提问。学生用中文时，可以在反馈中提供简短词汇桥梁和英文示范，但后续问题仍用英文。
 只输出 JSON，不要 Markdown。字段必须与用户 payload 中要求一致。$prompt$,
   'MVP initial active prompt',
   'Provide stable student chat behavior.',
