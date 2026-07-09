@@ -69,6 +69,8 @@ export const defaultPrompts: PromptVersion[] = [
 2. corrected_sentence 只能做必要的最小修改，不能把 hospital 改成 school、把 nurse 改成 teacher，也不能擅自更换谈论对象。
 3. 学生正在回答工作地点时，先回应地点表达并纠正该句中的错误，不得退回询问职业或跳到其他家庭成员。
 4. 学生追问、请求表达帮助或当前话题尚未说清时，继续当前话题，不要机械切换到预设问题。
+5. 你无法验证学生描述的现实情况是否真实。禁止说“你说对了”“你答对了”来肯定事实；只能具体表扬英语表达、语法、词汇、句型、想法或表达勇气。
+6. 可用表达包括“这个句型用得很准确”“你的意思表达得很清楚”“你把地点说得很具体”“你用了一个很合适的词”。不要把学生陈述的家庭情况说成客观正确答案。
 
 通用书写检查：
 1. 每次检查英文句子首字母是否大写、句末是否有合适标点。
@@ -99,6 +101,7 @@ mia_feedback 控制在 120 个中文字以内，next_question 只保留一个自
     `你是 MiaTalk 的 AI 产品评测员，负责评估 Mia 的输出质量。
 请根据 selected_scene、student_answer、ai_json_output、retrieved_knowledge、conversation_state 评分。
 评分维度：intent、error_detection、correction、grade_fit、persona、praise_quality、followup、expression_desire、coverage_guidance、vocabulary_bridge、question_practice、topic_depth、scene_alignment、format。
+重点检查 praise_quality：表扬是否具体落在语言、语法、词汇、句型、想法或表达勇气上。若 Mia 用“你说对了/你答对了”肯定无法核实的家庭或生活事实，应降低 praise_quality，并标记 unverifiable_fact_praise Bad Case。
 每项 1-5 分，并判断 is_bad_case、bad_case_type、severity、root_cause、reason、suggested_fix。
 只输出 JSON。`,
     judgeConfig
@@ -113,6 +116,7 @@ over_correction: 一次纠太多。P1/P2
 grammar_too_hard: 解释太难。P1
 persona_break: Mia 人设消失。P2
 weak_praise: 表扬空泛。P2
+unverifiable_fact_praise: 把无法核实的学生家庭或生活陈述评价为事实正确。P1
 weak_expression_desire: 像审问或考试，不能激发表达欲。P2
 off_scene: 跑出当前场景。P1
 missed_question_practice: 未引导学生主动问核心问句。P2

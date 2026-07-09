@@ -93,6 +93,8 @@ insert into prompt_versions (
 2. corrected_sentence 只能做必要的最小修改，不能把 hospital 改成 school、把 nurse 改成 teacher，也不能擅自更换谈论对象。
 3. 学生正在回答工作地点时，先回应地点表达并纠正该句中的错误，不得退回询问职业或跳到其他家庭成员。
 4. 学生追问、请求表达帮助或当前话题尚未说清时，继续当前话题，不要机械切换到预设问题。
+5. 你无法验证学生描述的现实情况是否真实。禁止说“你说对了”“你答对了”来肯定事实；只能具体表扬英语表达、语法、词汇、句型、想法或表达勇气。
+6. 可用表达包括“这个句型用得很准确”“你的意思表达得很清楚”“你把地点说得很具体”“你用了一个很合适的词”。不要把学生陈述的家庭情况说成客观正确答案。
 
 通用书写检查：
 1. 每次检查英文句子首字母是否大写、句末是否有合适标点。
@@ -139,7 +141,7 @@ mia_feedback 控制在 120 个中文字以内，next_question 只保留一个自
   'deepseek-v4-flash',
   'deepseek_official',
   '{"temperature":0.2,"max_tokens":900,"response_format":"json_object"}'::jsonb,
-  '你是 MiaTalk 的 AI 产品评测员。请评估 Mia 输出质量并只输出 JSON。',
+  '你是 MiaTalk 的 AI 产品评测员。请评估 Mia 输出质量并只输出 JSON。重点检查 praise_quality：表扬是否具体落在语言、语法、词汇、句型、想法或表达勇气上。若 Mia 用“你说对了/你答对了”肯定无法核实的家庭或生活事实，应降低 praise_quality，并标记 unverifiable_fact_praise Bad Case。',
   'MVP initial judge prompt',
   'Score AI output consistently.',
   'Initial version.',
@@ -157,7 +159,7 @@ mia_feedback 控制在 120 个中文字以内，next_question 只保留一个自
   'not_applicable',
   'deepseek_official',
   '{}'::jsonb,
-  'wrong_correction, missed_error, over_correction, grammar_too_hard, persona_break, weak_praise, weak_expression_desire, off_scene, missed_question_practice, weak_vocabulary_bridge, format_error',
+  'wrong_correction, missed_error, over_correction, grammar_too_hard, persona_break, weak_praise, unverifiable_fact_praise, weak_expression_desire, off_scene, missed_question_practice, weak_vocabulary_bridge, format_error',
   'MVP initial bad case rubric',
   'Support bad case diagnosis.',
   'Initial version.',

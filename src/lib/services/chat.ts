@@ -77,14 +77,24 @@ function applyDeterministicGuardrails(
   const occupationQuestion =
     /what\s+does\s+(?:your\s+)?(?:mother|father|aunt|uncle|grandpa|he|she)\s+do\s*\?/i;
 
-  const feedbackWithoutQuestions = output.mia_feedback
+  let feedbackWithoutQuestions = output.mia_feedback
     .replace(/[^。！？.!?]*[?？]/g, "")
     .replace(/\s{2,}/g, " ")
     .trim();
+  if (/你(?:说|答)(?:得)?对了|你说的是对的/.test(feedbackWithoutQuestions)) {
+    const languagePraise = output.error_types.length
+      ? "你的意思表达得很清楚。"
+      : "这个句型用得很准确。";
+    const correctedExpression = output.corrected_sentence.trim();
+    feedbackWithoutQuestions = correctedExpression
+      ? `${languagePraise}可以这样完整表达：${correctedExpression}`
+      : languagePraise;
+  }
   const englishQuestion = output.next_question.match(
     /\b(?:what|where|who|when|why|how|do|does|is|are|can|could|would|which)\b[^?？]*\?/i
   )?.[0];
-  const nextQuestion = englishQuestion?.trim() || output.next_question.trim();
+  const nextQuestion =
+    englishQuestion?.trim() || "Can you tell me more about it?";
 
   if (!isWorkplaceAnswer) {
     return {
