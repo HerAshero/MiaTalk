@@ -220,3 +220,7 @@ alter table coverage_items enable row level security;
 alter table evaluations enable row level security;
 alter table bad_cases enable row level security;
 alter table test_cases enable row level security;
+
+grant usage on schema public to service_role;
+grant all privileges on all tables in schema public to service_role;
+grant all privileges on all sequences in schema public to service_role;

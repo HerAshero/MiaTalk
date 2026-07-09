@@ -40,6 +40,18 @@ function defaultMiaOutput(studentAnswer: string): StudentMainOutput {
   };
 }
 
+function isStudentMainOutput(value: unknown): value is StudentMainOutput {
+  if (!value || typeof value !== "object") return false;
+  const output = value as Record<string, unknown>;
+  return (
+    typeof output.mia_feedback === "string" &&
+    output.mia_feedback.length > 0 &&
+    typeof output.next_question === "string" &&
+    Array.isArray(output.covered_vocabulary) &&
+    Array.isArray(output.error_types)
+  );
+}
+
 export async function runStudentChat(input: {
   session_id: string;
   student_answer: string;
@@ -71,7 +83,37 @@ export async function runStudentChat(input: {
     prompt_version_id: prompt.prompt_version_id,
     prompt_version: prompt.version,
     model_provider: prompt.model_provider,
-    model: prompt.model
+    model: prompt.model,
+    required_output_schema: {
+      intent_understood: "string",
+      is_answer_on_topic: "boolean",
+      highlight: "string",
+      covered_vocabulary: ["string"],
+      covered_phrases: ["string"],
+      covered_textbook_expressions: ["string"],
+      covered_patterns: ["string"],
+      question_patterns_practiced: ["string"],
+      student_question_attempted: "boolean",
+      topic_keywords_offered: ["string"],
+      vocabulary_bridge: "string",
+      topic_depth_status: "string",
+      expression_desire_signal: "string",
+      expression_desire_reason: "string",
+      newly_covered_items: ["string"],
+      error_types: ["string"],
+      main_issue: "string",
+      correction_priority_reason: "string",
+      corrected_sentence: "string",
+      mia_feedback: "string",
+      next_question: "string",
+      suggested_next_focus: "string",
+      student_expression_confidence: "low | medium | high",
+      conversation_should_continue: "boolean",
+      scene_completion_signal: "in_progress | ready_to_switch",
+      scene_alignment: "string",
+      bad_case_risk: "boolean",
+      bad_case_risk_reason: "string"
+    }
   };
 
   let rawText = "";
@@ -96,7 +138,12 @@ export async function runStudentChat(input: {
     parseError = "llm_request_failed";
   }
 
-  const output = (parsed ?? defaultMiaOutput(input.student_answer)) as StudentMainOutput;
+  if (parsed !== null && !isStudentMainOutput(parsed)) {
+    parseError = "invalid_student_main_output";
+  }
+  const output = isStudentMainOutput(parsed)
+    ? parsed
+    : defaultMiaOutput(input.student_answer);
 
   const { data: studentTurn, error: studentTurnError } = await supabase
     .from("turns")
