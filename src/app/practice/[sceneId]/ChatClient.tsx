@@ -11,6 +11,15 @@ type Props = {
   sceneIntro: string;
 };
 
+const summarySections = [
+  { key: "celebration", label: "🎉 真不错" },
+  { key: "content_summary", label: "🗺️ 聊了什么" },
+  { key: "highlight", label: "✨ 闪光点" },
+  { key: "gentle_reminder", label: "🌱 小提醒" },
+  { key: "next_practice_suggestion", label: "🚀 下次挑战" },
+  { key: "mia_goodbye", label: "🐾 米娅说" }
+] as const;
+
 export function ChatClient({ sceneId, sceneName, sceneIntro }: Props) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -101,10 +110,21 @@ export function ChatClient({ sceneId, sceneName, sceneIntro }: Props) {
         </button>
         {summary && (
           <div className="mt-5 rounded-xl bg-cream p-4 text-sm leading-6">
-            <p className="font-bold">学习总结</p>
-            <pre className="mt-2 whitespace-pre-wrap font-sans">
-              {JSON.stringify(summary, null, 2)}
-            </pre>
+            <p className="text-lg font-black">📚 学习总结</p>
+            <div className="mt-4 space-y-4">
+              {summarySections.map(({ key, label }) => {
+                const value = summary[key];
+                if (typeof value !== "string" || !value.trim()) return null;
+                return (
+                  <section key={key}>
+                    <h3 className="font-bold text-ink">{label}</h3>
+                    <p className="mt-1 whitespace-pre-wrap text-slate-700">
+                      {value}
+                    </p>
+                  </section>
+                );
+              })}
+            </div>
           </div>
         )}
       </aside>
