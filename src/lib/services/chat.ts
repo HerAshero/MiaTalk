@@ -5,38 +5,43 @@ import { getSession, listTurns } from "@/lib/services/sessions";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import type { StudentMainOutput } from "@/lib/types";
 
-function defaultMiaOutput(studentAnswer: string): StudentMainOutput {
+function defaultMiaOutput(
+  studentAnswer: string,
+  modelResponse?: string
+): StudentMainOutput {
+  const safeFeedback =
+    modelResponse?.trim() ||
+    `米娅听到了你说：“${studentAnswer}” 这次米娅没有成功整理好反馈，所以我先不改变你的意思。你可以再说一次，我会继续认真听。`;
+
   return {
-    intent_understood: `学生想表达：${studentAnswer}`,
+    intent_understood: `学生原话：${studentAnswer}`,
     is_answer_on_topic: true,
-    highlight: "愿意开口表达自己的想法",
+    highlight: "愿意继续用英语表达真实想法",
     covered_vocabulary: [],
     covered_phrases: [],
     covered_textbook_expressions: [],
     covered_patterns: [],
     question_patterns_practiced: [],
     student_question_attempted: false,
-    topic_keywords_offered: ["job", "work", "school"],
-    vocabulary_bridge:
-      "你想说家人的工作，可以先用 father/mother + is a ...。例如：My mother is a teacher.",
+    topic_keywords_offered: [],
+    vocabulary_bridge: "",
     topic_depth_status: "developing",
     expression_desire_signal: "encouraged",
     expression_desire_reason: "先肯定学生，再给简单表达台阶。",
     newly_covered_items: [],
-    error_types: [],
-    main_issue: "none",
-    correction_priority_reason: "none",
-    corrected_sentence: "My mother is a teacher.",
-    mia_feedback:
-      "Mia 听懂啦！你已经在用英语说自己的生活了。可以这样说：My mother is a teacher.",
-    next_question: "What does your father do?",
-    suggested_next_focus: "family jobs",
+    error_types: ["output_format_error"],
+    main_issue: "模型输出格式异常，无法可靠判断学生语言错误。",
+    correction_priority_reason: "不编造、不改变学生原意优先。",
+    corrected_sentence: studentAnswer,
+    mia_feedback: safeFeedback,
+    next_question: "Can you tell me more about it?",
+    suggested_next_focus: "continue_current_topic",
     student_expression_confidence: "medium",
     conversation_should_continue: true,
     scene_completion_signal: "in_progress",
-    scene_alignment: "贴合职业主题",
-    bad_case_risk: false,
-    bad_case_risk_reason: ""
+    scene_alignment: "保持学生当前话题，不擅自推进。",
+    bad_case_risk: true,
+    bad_case_risk_reason: "模型未返回合格的结构化输出，已启用忠实原意兜底。"
   };
 }
 
@@ -50,6 +55,57 @@ function isStudentMainOutput(value: unknown): value is StudentMainOutput {
     Array.isArray(output.covered_vocabulary) &&
     Array.isArray(output.error_types)
   );
+}
+
+function applyDeterministicGuardrails(
+  studentAnswer: string,
+  output: StudentMainOutput
+): StudentMainOutput {
+  const errorTypes = new Set(output.error_types);
+  if (/^\s*[a-z]/.test(studentAnswer)) {
+    errorTypes.add("sentence_initial_capitalization");
+  }
+  if (!/[.!?]\s*$/.test(studentAnswer)) {
+    errorTypes.add("missing_terminal_punctuation");
+  }
+
+  const isWorkplaceAnswer =
+    /\bwork(?:s|ed|ing)?\s+(?:at|in|on)\b/i.test(studentAnswer) ||
+    /\b(?:hospital|school|farm|restaurant|station|fields|city|home)\b/i.test(
+      studentAnswer
+    );
+  const occupationQuestion =
+    /what\s+does\s+(?:your\s+)?(?:mother|father|aunt|uncle|grandpa|he|she)\s+do\s*\?/i;
+
+  if (!isWorkplaceAnswer) {
+    return { ...output, error_types: [...errorTypes] };
+  }
+
+  const hasOccupationJump =
+    occupationQuestion.test(output.next_question) ||
+    occupationQuestion.test(output.mia_feedback);
+  if (!hasOccupationJump) {
+    return { ...output, error_types: [...errorTypes] };
+  }
+
+  const feedback = output.mia_feedback
+    .replace(occupationQuestion, "")
+    .replace(/[^。！？.!?]*[?？]/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  const nextQuestion = /\bmother\b/i.test(studentAnswer)
+    ? "Does your mother work there in the day or at night?"
+    : /\bfather\b/i.test(studentAnswer)
+      ? "Does your father work there in the day or at night?"
+      : "Do they work there in the day or at night?";
+
+  return {
+    ...output,
+    error_types: [...errorTypes],
+    mia_feedback: feedback,
+    next_question: nextQuestion,
+    suggested_next_focus: "deepen_current_workplace_topic"
+  };
 }
 
 export async function runStudentChat(input: {
@@ -141,9 +197,16 @@ export async function runStudentChat(input: {
   if (parsed !== null && !isStudentMainOutput(parsed)) {
     parseError = "invalid_student_main_output";
   }
-  const output = isStudentMainOutput(parsed)
+  const unstructuredResponse =
+    parsed &&
+    typeof parsed === "object" &&
+    typeof (parsed as Record<string, unknown>).response === "string"
+      ? ((parsed as Record<string, unknown>).response as string)
+      : undefined;
+  const rawOutput = isStudentMainOutput(parsed)
     ? parsed
-    : defaultMiaOutput(input.student_answer);
+    : defaultMiaOutput(input.student_answer, unstructuredResponse);
+  const output = applyDeterministicGuardrails(input.student_answer, rawOutput);
 
   const { data: studentTurn, error: studentTurnError } = await supabase
     .from("turns")

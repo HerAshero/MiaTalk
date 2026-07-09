@@ -118,7 +118,7 @@ export function ChatClient({ sceneId, sceneName, sceneIntro }: Props) {
           {messages.map((message, index) => (
             <div
               key={index}
-              className={`max-w-[78%] whitespace-pre-wrap rounded-2xl px-4 py-3 leading-7 ${
+              className={`w-fit max-w-[78%] whitespace-pre-wrap rounded-2xl px-4 py-3 leading-7 ${
                 message.role === "student"
                   ? "ml-auto bg-ink text-white"
                   : "bg-orange-50 text-ink"
@@ -127,6 +127,20 @@ export function ChatClient({ sceneId, sceneName, sceneIntro }: Props) {
               {message.content}
             </div>
           ))}
+          {loading && (
+            <div
+              role="status"
+              aria-label="Mia 正在思考"
+              className="flex w-fit items-center gap-2 rounded-2xl bg-orange-50 px-4 py-3 text-ink"
+            >
+              <span className="text-sm font-semibold">Mia 正在想</span>
+              <span className="flex gap-1" aria-hidden="true">
+                <span className="h-2 w-2 animate-bounce rounded-full bg-mia [animation-delay:-0.3s]" />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-mia [animation-delay:-0.15s]" />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-mia" />
+              </span>
+            </div>
+          )}
         </div>
         <div className="flex gap-3 border-t border-orange-100 p-4">
           <input
