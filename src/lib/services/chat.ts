@@ -77,23 +77,41 @@ function applyDeterministicGuardrails(
   const occupationQuestion =
     /what\s+does\s+(?:your\s+)?(?:mother|father|aunt|uncle|grandpa|he|she)\s+do\s*\?/i;
 
-  if (!isWorkplaceAnswer) {
-    return { ...output, error_types: [...errorTypes] };
-  }
-
-  const hasOccupationJump =
-    occupationQuestion.test(output.next_question) ||
-    occupationQuestion.test(output.mia_feedback);
-  if (!hasOccupationJump) {
-    return { ...output, error_types: [...errorTypes] };
-  }
-
-  const feedback = output.mia_feedback
-    .replace(occupationQuestion, "")
+  const feedbackWithoutQuestions = output.mia_feedback
     .replace(/[^。！？.!?]*[?？]/g, "")
     .replace(/\s{2,}/g, " ")
     .trim();
-  const nextQuestion = /\bmother\b/i.test(studentAnswer)
+  const englishQuestion = output.next_question.match(
+    /\b(?:what|where|who|when|why|how|do|does|is|are|can|could|would|which)\b[^?？]*\?/i
+  )?.[0];
+  const nextQuestion = englishQuestion?.trim() || output.next_question.trim();
+
+  if (!isWorkplaceAnswer) {
+    return {
+      ...output,
+      error_types: [...errorTypes],
+      mia_feedback: feedbackWithoutQuestions,
+      next_question: nextQuestion
+    };
+  }
+
+  const hasOccupationJump =
+    occupationQuestion.test(nextQuestion) ||
+    occupationQuestion.test(feedbackWithoutQuestions);
+  if (!hasOccupationJump) {
+    return {
+      ...output,
+      error_types: [...errorTypes],
+      mia_feedback: feedbackWithoutQuestions,
+      next_question: nextQuestion
+    };
+  }
+
+  const feedback = feedbackWithoutQuestions
+    .replace(occupationQuestion, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  const workplaceQuestion = /\bmother\b/i.test(studentAnswer)
     ? "Does your mother work there in the day or at night?"
     : /\bfather\b/i.test(studentAnswer)
       ? "Does your father work there in the day or at night?"
@@ -103,7 +121,7 @@ function applyDeterministicGuardrails(
     ...output,
     error_types: [...errorTypes],
     mia_feedback: feedback,
-    next_question: nextQuestion,
+    next_question: workplaceQuestion,
     suggested_next_focus: "deepen_current_workplace_topic"
   };
 }
