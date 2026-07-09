@@ -65,11 +65,27 @@ function applyDeterministicGuardrails(
   studentAnswer: string,
   output: StudentMainOutput
 ): StudentMainOutput {
-  const errorTypes = new Set(output.error_types);
-  if (/^\s*[a-z]/.test(studentAnswer)) {
+  const hasCapitalizationError = /^\s*[a-z]/.test(studentAnswer);
+  const hasTerminalPunctuationError = !/[.!?]\s*$/.test(studentAnswer);
+  const errorTypes = new Set(
+    output.error_types.filter((errorType) => {
+      if (
+        /capital|uppercase|sentence_initial|首字母|大写/i.test(errorType)
+      ) {
+        return false;
+      }
+      if (
+        /punctuation|terminal|full_stop|period|句号|标点/i.test(errorType)
+      ) {
+        return false;
+      }
+      return true;
+    })
+  );
+  if (hasCapitalizationError) {
     errorTypes.add("sentence_initial_capitalization");
   }
-  if (!/[.!?]\s*$/.test(studentAnswer)) {
+  if (hasTerminalPunctuationError) {
     errorTypes.add("missing_terminal_punctuation");
   }
 
@@ -95,6 +111,22 @@ function applyDeterministicGuardrails(
     .replace(/[^。！？.!?]*[?？]/g, "")
     .replace(/\s{2,}/g, " ")
     .trim();
+  if (!hasCapitalizationError) {
+    const replacement = hasTerminalPunctuationError
+      ? "另外记得在句末加上句号。"
+      : "";
+    feedbackWithoutQuestions = feedbackWithoutQuestions
+      .replace(
+        /(?:另外)?(?:要)?记得(?:句子)?(?:开头|首字母)(?:要)?大写[哦呀！。]*/g,
+        replacement
+      )
+      .replace(
+        /(?:注意|需要|应该)(?:句子)?(?:开头|首字母)(?:要)?大写[哦呀！。]*/g,
+        replacement
+      )
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  }
   if (correctedWithoutPunctuation) {
     feedbackWithoutQuestions = feedbackWithoutQuestions.replace(
       new RegExp(`${escapeRegExp(correctedWithoutPunctuation)}(?![.!?])`, "g"),
